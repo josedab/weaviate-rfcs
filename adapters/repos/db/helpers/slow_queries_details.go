@@ -17,6 +17,8 @@ import (
 	"maps"
 	"sync"
 	"time"
+
+	"github.com/weaviate/weaviate/entities/observability"
 )
 
 type SlowQueryDetails struct {
@@ -139,4 +141,86 @@ func ExtractSlowQueryDetails(ctx context.Context) map[string]any {
 	values := maps.Clone(details.values)
 
 	return values
+}
+
+// AnnotatePerformanceBreakdown stores performance breakdown in the context
+func AnnotatePerformanceBreakdown(ctx context.Context, breakdown observability.PerformanceBreakdown) {
+	val := ctx.Value("slow_query_details")
+	if val == nil {
+		return
+	}
+
+	details, ok := val.(*SlowQueryDetails)
+	if !ok {
+		return
+	}
+
+	details.Lock()
+	defer details.Unlock()
+
+	details.values["performance_breakdown"] = breakdown
+}
+
+// AnnotateExplainPlan stores the explain plan in the context
+func AnnotateExplainPlan(ctx context.Context, plan *observability.QueryExplainPlan) {
+	val := ctx.Value("slow_query_details")
+	if val == nil {
+		return
+	}
+
+	details, ok := val.(*SlowQueryDetails)
+	if !ok {
+		return
+	}
+
+	details.Lock()
+	defer details.Unlock()
+
+	details.values["explain_plan"] = plan
+}
+
+// GetPerformanceBreakdown retrieves the performance breakdown from the context
+func GetPerformanceBreakdown(ctx context.Context) *observability.PerformanceBreakdown {
+	val := ctx.Value("slow_query_details")
+	if val == nil {
+		return nil
+	}
+
+	details, ok := val.(*SlowQueryDetails)
+	if !ok {
+		return nil
+	}
+
+	details.Lock()
+	defer details.Unlock()
+
+	breakdown, ok := details.values["performance_breakdown"].(observability.PerformanceBreakdown)
+	if !ok {
+		return nil
+	}
+
+	return &breakdown
+}
+
+// GetExplainPlan retrieves the explain plan from the context
+func GetExplainPlan(ctx context.Context) *observability.QueryExplainPlan {
+	val := ctx.Value("slow_query_details")
+	if val == nil {
+		return nil
+	}
+
+	details, ok := val.(*SlowQueryDetails)
+	if !ok {
+		return nil
+	}
+
+	details.Lock()
+	defer details.Unlock()
+
+	plan, ok := details.values["explain_plan"].(*observability.QueryExplainPlan)
+	if !ok {
+		return nil
+	}
+
+	return plan
 }

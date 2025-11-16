@@ -40,6 +40,17 @@ type Metrics struct {
 	tombstoneStart                prometheus.Gauge
 	tombstoneEnd                  prometheus.Gauge
 	tombstoneProgress             prometheus.Gauge
+
+	// HNSW Health Metrics (RFC 03: Enhanced Observability Suite)
+	unreachableNodes      prometheus.Gauge
+	isolatedComponents    prometheus.Gauge
+	avgDegree             *prometheus.GaugeVec
+	maxDegree             *prometheus.GaugeVec
+	layerNodeCount        *prometheus.GaugeVec
+	maxLayer              prometheus.Gauge
+	entrypointID          prometheus.Gauge
+	entrypointDegree      prometheus.Gauge
+	entrypointChanges     prometheus.Counter
 }
 
 func NewMetrics(prom *monitoring.PrometheusMetrics,
@@ -160,6 +171,52 @@ func NewMetrics(prom *monitoring.PrometheusMetrics,
 		"shard_name": shardName,
 	})
 
+	// HNSW Health Metrics (RFC 03: Enhanced Observability Suite)
+	unreachableNodes := prom.VectorIndexUnreachableNodes.With(prometheus.Labels{
+		"class_name": className,
+		"shard_name": shardName,
+	})
+
+	isolatedComponents := prom.VectorIndexIsolatedComponents.With(prometheus.Labels{
+		"class_name": className,
+		"shard_name": shardName,
+	})
+
+	avgDegree := prom.VectorIndexAvgDegree.MustCurryWith(prometheus.Labels{
+		"class_name": className,
+		"shard_name": shardName,
+	})
+
+	maxDegree := prom.VectorIndexMaxDegree.MustCurryWith(prometheus.Labels{
+		"class_name": className,
+		"shard_name": shardName,
+	})
+
+	layerNodeCount := prom.VectorIndexLayerNodeCount.MustCurryWith(prometheus.Labels{
+		"class_name": className,
+		"shard_name": shardName,
+	})
+
+	maxLayer := prom.VectorIndexMaxLayer.With(prometheus.Labels{
+		"class_name": className,
+		"shard_name": shardName,
+	})
+
+	entrypointID := prom.VectorIndexEntrypointID.With(prometheus.Labels{
+		"class_name": className,
+		"shard_name": shardName,
+	})
+
+	entrypointDegree := prom.VectorIndexEntrypointDegree.With(prometheus.Labels{
+		"class_name": className,
+		"shard_name": shardName,
+	})
+
+	entrypointChanges := prom.VectorIndexEntrypointChanges.With(prometheus.Labels{
+		"class_name": className,
+		"shard_name": shardName,
+	})
+
 	return &Metrics{
 		enabled:                       true,
 		tombstones:                    tombstones,
@@ -182,6 +239,16 @@ func NewMetrics(prom *monitoring.PrometheusMetrics,
 		tombstoneStart:                tombstoneStart,
 		tombstoneEnd:                  tombstoneEnd,
 		tombstoneProgress:             tombstoneProgress,
+		// HNSW Health Metrics
+		unreachableNodes:   unreachableNodes,
+		isolatedComponents: isolatedComponents,
+		avgDegree:          avgDegree,
+		maxDegree:          maxDegree,
+		layerNodeCount:     layerNodeCount,
+		maxLayer:           maxLayer,
+		entrypointID:       entrypointID,
+		entrypointDegree:   entrypointDegree,
+		entrypointChanges:  entrypointChanges,
 	}
 }
 
@@ -394,4 +461,69 @@ func (m *Metrics) TrackStartupReadCommitlogDiskIO(read int64, nanoseconds int64)
 	seconds := float64(nanoseconds) / float64(time.Second)
 	throughput := float64(read) / float64(seconds)
 	m.startupDiskIO.With(prometheus.Labels{"operation": "hnsw_read_commitlog"}).Observe(throughput)
+}
+
+// HNSW Health Metrics (RFC 03: Enhanced Observability Suite)
+
+func (m *Metrics) SetUnreachableNodes(count int) {
+	if !m.enabled {
+		return
+	}
+	m.unreachableNodes.Set(float64(count))
+}
+
+func (m *Metrics) SetIsolatedComponents(count int) {
+	if !m.enabled {
+		return
+	}
+	m.isolatedComponents.Set(float64(count))
+}
+
+func (m *Metrics) SetAvgDegree(layer int, avgDegree float64) {
+	if !m.enabled {
+		return
+	}
+	m.avgDegree.With(prometheus.Labels{"layer": fmt.Sprintf("%d", layer)}).Set(avgDegree)
+}
+
+func (m *Metrics) SetMaxDegree(layer int, maxDegree int) {
+	if !m.enabled {
+		return
+	}
+	m.maxDegree.With(prometheus.Labels{"layer": fmt.Sprintf("%d", layer)}).Set(float64(maxDegree))
+}
+
+func (m *Metrics) SetLayerNodeCount(layer int, count int) {
+	if !m.enabled {
+		return
+	}
+	m.layerNodeCount.With(prometheus.Labels{"layer": fmt.Sprintf("%d", layer)}).Set(float64(count))
+}
+
+func (m *Metrics) SetMaxLayer(layer int) {
+	if !m.enabled {
+		return
+	}
+	m.maxLayer.Set(float64(layer))
+}
+
+func (m *Metrics) SetEntrypointID(id uint64) {
+	if !m.enabled {
+		return
+	}
+	m.entrypointID.Set(float64(id))
+}
+
+func (m *Metrics) SetEntrypointDegree(degree int) {
+	if !m.enabled {
+		return
+	}
+	m.entrypointDegree.Set(float64(degree))
+}
+
+func (m *Metrics) IncrementEntrypointChanges() {
+	if !m.enabled {
+		return
+	}
+	m.entrypointChanges.Inc()
 }

@@ -131,6 +131,17 @@ type PrometheusMetrics struct {
 	TombstoneReassignNeighbors    *prometheus.CounterVec
 	TombstoneDeleteListSize       *prometheus.GaugeVec
 
+	// HNSW Health Metrics (RFC 03: Enhanced Observability Suite)
+	VectorIndexUnreachableNodes   *prometheus.GaugeVec
+	VectorIndexIsolatedComponents *prometheus.GaugeVec
+	VectorIndexAvgDegree          *prometheus.GaugeVec
+	VectorIndexMaxDegree          *prometheus.GaugeVec
+	VectorIndexLayerNodeCount     *prometheus.GaugeVec
+	VectorIndexMaxLayer           *prometheus.GaugeVec
+	VectorIndexEntrypointID       *prometheus.GaugeVec
+	VectorIndexEntrypointDegree   *prometheus.GaugeVec
+	VectorIndexEntrypointChanges  *prometheus.CounterVec
+
 	Group bool
 	// Keeping metering to only the critical buckets (objects, vectors_compressed)
 	// helps cut down on noise when monitoring
@@ -338,6 +349,16 @@ func (pm *PrometheusMetrics) DeleteShard(className, shardName string) error {
 	pm.StartupProgress.DeletePartialMatch(labels)
 	pm.StartupDurations.DeletePartialMatch(labels)
 	pm.StartupDiskIO.DeletePartialMatch(labels)
+	// HNSW Health Metrics (RFC 03)
+	pm.VectorIndexUnreachableNodes.DeletePartialMatch(labels)
+	pm.VectorIndexIsolatedComponents.DeletePartialMatch(labels)
+	pm.VectorIndexAvgDegree.DeletePartialMatch(labels)
+	pm.VectorIndexMaxDegree.DeletePartialMatch(labels)
+	pm.VectorIndexLayerNodeCount.DeletePartialMatch(labels)
+	pm.VectorIndexMaxLayer.DeletePartialMatch(labels)
+	pm.VectorIndexEntrypointID.DeletePartialMatch(labels)
+	pm.VectorIndexEntrypointDegree.DeletePartialMatch(labels)
+	pm.VectorIndexEntrypointChanges.DeletePartialMatch(labels)
 	return nil
 }
 
@@ -791,6 +812,44 @@ func newPrometheusMetrics() *PrometheusMetrics {
 		TombstoneDeleteListSize: promauto.NewGaugeVec(prometheus.GaugeOpts{
 			Name: "tombstone_delete_list_size",
 			Help: "Delete list size of tombstones",
+		}, []string{"class_name", "shard_name"}),
+
+		// HNSW Health Metrics (RFC 03: Enhanced Observability Suite)
+		VectorIndexUnreachableNodes: promauto.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "vector_index_unreachable_nodes_total",
+			Help: "Nodes not reachable from entry point",
+		}, []string{"class_name", "shard_name"}),
+		VectorIndexIsolatedComponents: promauto.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "vector_index_isolated_components",
+			Help: "Number of disconnected subgraphs",
+		}, []string{"class_name", "shard_name"}),
+		VectorIndexAvgDegree: promauto.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "vector_index_avg_degree",
+			Help: "Average connections per layer",
+		}, []string{"class_name", "shard_name", "layer"}),
+		VectorIndexMaxDegree: promauto.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "vector_index_max_degree",
+			Help: "Maximum connections (should be <= M or M0)",
+		}, []string{"class_name", "shard_name", "layer"}),
+		VectorIndexLayerNodeCount: promauto.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "vector_index_layer_node_count",
+			Help: "Nodes per layer (histogram)",
+		}, []string{"class_name", "shard_name", "layer"}),
+		VectorIndexMaxLayer: promauto.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "vector_index_max_layer",
+			Help: "Current maximum layer",
+		}, []string{"class_name", "shard_name"}),
+		VectorIndexEntrypointID: promauto.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "vector_index_entrypoint_id",
+			Help: "Current entry point doc ID",
+		}, []string{"class_name", "shard_name"}),
+		VectorIndexEntrypointDegree: promauto.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "vector_index_entrypoint_degree",
+			Help: "Connections of entry point",
+		}, []string{"class_name", "shard_name"}),
+		VectorIndexEntrypointChanges: promauto.NewCounterVec(prometheus.CounterOpts{
+			Name: "vector_index_entrypoint_changes_total",
+			Help: "How often entry point changed (should be rare)",
 		}, []string{"class_name", "shard_name"}),
 
 		T2VBatches: promauto.NewGaugeVec(prometheus.GaugeOpts{
