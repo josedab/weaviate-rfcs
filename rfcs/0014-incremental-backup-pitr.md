@@ -1,9 +1,9 @@
 # RFC 0014: Incremental Backup and Point-in-Time Recovery
 
-**Status:** Proposed  
-**Author:** Jose David Baena (@josedab)  
-**Created:** 2025-01-16  
-**Updated:** 2025-01-16  
+**Status:** Implemented
+**Author:** Jose David Baena (@josedab)
+**Created:** 2025-01-16
+**Updated:** 2025-11-16  
 
 ---
 
