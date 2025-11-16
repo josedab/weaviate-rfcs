@@ -1,0 +1,42 @@
+apiVersion: weaviate.io/v1
+kind: WeaviateCluster
+metadata:
+  name: weaviate-gcp
+  namespace: weaviate
+spec:
+  version: "1.27.0"
+  replicas: 3
+
+  resources:
+    requests:
+      memory: "8Gi"
+      cpu: "2000m"
+    limits:
+      memory: "16Gi"
+      cpu: "4000m"
+
+  storage:
+    size: "100Gi"
+    storageClassName: "pd-ssd"
+
+  autoScaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPU: 70
+    targetMemory: 80
+
+  cloudProvider:
+    type: gcp
+    region: us-central1
+
+    gcp:
+      # Use local SSD for cache
+      useLocalSSD: true
+
+      # Machine type selection
+      machineType: "c2-standard-8"
+
+      # GCS backup integration
+      backup:
+        bucket: weaviate-backups-gcp

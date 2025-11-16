@@ -1,0 +1,43 @@
+apiVersion: weaviate.io/v1
+kind: WeaviateCluster
+metadata:
+  name: weaviate-azure
+  namespace: weaviate
+spec:
+  version: "1.27.0"
+  replicas: 3
+
+  resources:
+    requests:
+      memory: "8Gi"
+      cpu: "2000m"
+    limits:
+      memory: "16Gi"
+      cpu: "4000m"
+
+  storage:
+    size: "100Gi"
+    storageClassName: "managed-premium"
+
+  autoScaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPU: 70
+    targetMemory: 80
+
+  cloudProvider:
+    type: azure
+    region: eastus
+
+    azure:
+      # VM size selection
+      vmSize: "Standard_F8s_v2"
+
+      # Use premium storage
+      usePremiumStorage: true
+
+      # Azure Storage backup integration
+      backup:
+        storageAccount: weaviatebackups
+        container: backups

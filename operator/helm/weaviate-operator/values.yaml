@@ -1,0 +1,60 @@
+# Default values for weaviate-operator
+
+replicaCount: 1
+
+image:
+  repository: weaviate/weaviate-operator
+  tag: latest
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: "weaviate-operator-controller-manager"
+
+podAnnotations: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  runAsNonRoot: true
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Metrics configuration
+metrics:
+  enabled: true
+  port: 8080
+
+# Health check configuration
+health:
+  port: 8081
+
+# Leader election
+leaderElection:
+  enabled: true
+
+# Webhook configuration
+webhook:
+  port: 9443

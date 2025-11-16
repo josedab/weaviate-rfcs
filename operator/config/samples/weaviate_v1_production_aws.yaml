@@ -1,0 +1,68 @@
+apiVersion: weaviate.io/v1
+kind: WeaviateCluster
+metadata:
+  name: production
+  namespace: weaviate
+spec:
+  version: "1.27.0"
+  replicas: 3
+
+  resources:
+    requests:
+      memory: "8Gi"
+      cpu: "2000m"
+    limits:
+      memory: "16Gi"
+      cpu: "4000m"
+
+  storage:
+    size: "100Gi"
+    storageClassName: "fast-ssd"
+
+  autoScaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPU: 70
+    targetMemory: 80
+    targetQPS: 1000
+    targetLatency: "50ms"
+
+  modules:
+    - name: text2vec-openai
+      enabled: true
+      config:
+        apiKey:
+          secretKeyRef:
+            name: openai-credentials
+            key: api-key
+
+    - name: qna-transformers
+      enabled: true
+      resources:
+        memory: "4Gi"
+
+  cloudProvider:
+    type: aws
+    region: us-east-1
+
+    # AWS-specific optimizations
+    aws:
+      # Use EBS optimized instances
+      ebsOptimized: true
+
+      # Instance type selection
+      instanceType: "c5.4xlarge"
+
+      # Use local NVMe for cache
+      useLocalNVMe: true
+
+      # S3 backup integration
+      backup:
+        bucket: weaviate-backups-prod
+
+  # Service mesh integration
+  serviceMesh:
+    enabled: true
+    type: istio
+    mTLS: true
