@@ -186,3 +186,27 @@ message RefPropertiesResult {
   repeated PropertiesResult properties = 1;
   string prop_name = 2;
 }
+
+// SearchBatch represents a batch of search results with bounds for early termination
+// Used in streaming search to enable cross-shard query optimization
+message SearchBatch {
+  // Batch of results
+  repeated SearchResult results = 1;
+
+  // Lower bound: score/distance of the last result in this batch
+  // For distance metrics (lower is better): represents max distance in batch
+  // For similarity metrics (higher is better): represents min score in batch
+  float min_score = 2;
+  bool min_score_present = 3;
+
+  // Upper bound: best possible score/distance for remaining unseen results
+  // Used for early termination - if max_remaining < current_threshold, can stop
+  float max_remaining_score = 4;
+  bool max_remaining_score_present = 5;
+
+  // Indicates if this shard has no more results to return
+  bool exhausted = 6;
+
+  // Total results available on this shard (optional, for diagnostics)
+  uint32 total_results = 7;
+}

@@ -37,6 +37,11 @@ const (
 
 	DefaultFilterStrategy = FilterStrategyAcorn
 
+	// Cross-shard streaming search optimization defaults
+	DefaultStreamingSearchEnabled   = false // Feature flag for streaming search with early termination
+	DefaultStreamingBatchSize       = 10    // Number of results per batch in streaming mode
+	DefaultStreamingMaxRounds       = 10    // Maximum number of batching rounds
+
 	// Fail validation if those criteria are not met
 	MinmumMaxConnections  = 4
 	MaximumMaxConnections = 2047
@@ -64,6 +69,10 @@ type UserConfig struct {
 	Multivector              MultivectorConfig `json:"multivector"`
 	SkipDefaultQuantization  bool              `json:"skipDefaultQuantization"`
 	TrackDefaultQuantization bool              `json:"trackDefaultQuantization"`
+	// Cross-shard streaming search optimization
+	StreamingSearchEnabled bool `json:"streamingSearchEnabled"`
+	StreamingBatchSize     int  `json:"streamingBatchSize"`
+	StreamingMaxRounds     int  `json:"streamingMaxRounds"`
 }
 
 // IndexType returns the type of the underlying vector index, thus making sure
@@ -132,6 +141,9 @@ func (u *UserConfig) SetDefaults() {
 			Repetitions:  DefaultMultivectorRepetitions,
 		},
 	}
+	u.StreamingSearchEnabled = DefaultStreamingSearchEnabled
+	u.StreamingBatchSize = DefaultStreamingBatchSize
+	u.StreamingMaxRounds = DefaultStreamingMaxRounds
 }
 
 // ParseAndValidateConfig from an unknown input value, as this is not further
