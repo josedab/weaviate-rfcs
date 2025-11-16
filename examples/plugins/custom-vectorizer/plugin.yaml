@@ -1,0 +1,44 @@
+apiVersion: weaviate.io/v1
+kind: Plugin
+metadata:
+  name: custom-embedder
+  version: 1.0.0
+  author: "Custom Corp"
+  description: "Example custom embedding model plugin"
+
+spec:
+  type: vectorizer
+
+  # Runtime (wasm | grpc | native)
+  runtime: wasm
+
+  # Binary/WASM file
+  binary: ./custom-embedder.wasm
+
+  # Dependencies
+  dependencies:
+    - name: onnx-runtime
+      version: "^1.15.0"
+
+  # Resource limits
+  resources:
+    memory: "2Gi"
+    cpu: "1000m"
+
+  # Capabilities
+  capabilities:
+    dimensions: 768
+    maxBatchSize: 100
+
+  # Configuration schema
+  config:
+    apiKey:
+      type: string
+      required: true
+      secret: true
+    modelPath:
+      type: string
+      default: "/models/default"
+    batchSize:
+      type: int
+      default: 32
