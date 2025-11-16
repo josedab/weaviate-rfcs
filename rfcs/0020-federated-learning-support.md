@@ -1,9 +1,9 @@
 # RFC 0020: Federated Learning Support
 
-**Status:** Proposed  
-**Author:** Jose David Baena (@josedab)  
-**Created:** 2025-01-16  
-**Updated:** 2025-01-16  
+**Status:** Implemented
+**Author:** Jose David Baena (@josedab)
+**Created:** 2025-01-16
+**Updated:** 2025-11-16  
 
 ---
 

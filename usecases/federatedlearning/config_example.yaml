@@ -1,0 +1,157 @@
+# Federated Learning Configuration Example
+
+# Enable federated learning
+federatedLearning:
+  enabled: true
+
+  # Coordinator settings
+  coordinator:
+    # Endpoint of the federated learning coordinator
+    endpoint: https://fl-coordinator.example.com
+
+    # Role: coordinator or participant
+    # - coordinator: Orchestrates training across participants
+    # - participant: Contributes local training
+    role: coordinator
+
+  # Training configuration
+  training:
+    # Number of federated training rounds
+    rounds: 100
+
+    # Number of local epochs per round
+    localEpochs: 5
+
+    # Batch size for local training
+    batchSize: 32
+
+    # Learning rate
+    learningRate: 0.001
+
+    # Aggregation method: fedavg | fedprox | scaffold
+    # - fedavg: Standard federated averaging
+    # - fedprox: Federated averaging with proximal term
+    # - scaffold: Variance reduction with control variates
+    aggregationMethod: fedavg
+
+    # Minimum number of participants required per round
+    minParticipants: 2
+
+    # Convergence threshold (optional)
+    convergenceThreshold: 0.001
+
+    # Maximum rounds (stop even if not converged)
+    maxRounds: 1000
+
+  # Privacy parameters
+  privacy:
+    # Enable differential privacy
+    differentialPrivacy: true
+
+    # Privacy parameters for (ε,δ)-DP
+    # epsilon: Privacy parameter (smaller = more private, typical: 0.1-10)
+    epsilon: 1.0
+
+    # delta: Failure probability (typically 1/n² where n = data size)
+    delta: 1e-5
+
+    # Privacy budget management
+    budget:
+      # Total privacy budget available
+      total: 10.0
+
+      # Budget consumed per query
+      perQuery: 0.1
+
+    # Enable secure aggregation (cryptographic)
+    secureAggregation: true
+
+    # Minimum participants for secure aggregation
+    aggregationThreshold: 2
+
+  # Participants (coordinator mode only)
+  participants:
+    # Hospital A
+    - id: hospital-a
+      endpoint: https://hospital-a.example.com:8080
+      weight: 1.0
+
+    # Hospital B (larger dataset, higher weight)
+    - id: hospital-b
+      endpoint: https://hospital-b.example.com:8080
+      weight: 1.5
+
+    # Research Institute
+    - id: research-institute
+      endpoint: https://research.example.com:8080
+      weight: 1.2
+
+---
+
+# Alternative Configuration: Cross-Border Financial Institutions
+
+federatedLearning:
+  enabled: true
+
+  coordinator:
+    endpoint: https://financial-consortium.example.com
+    role: coordinator
+
+  training:
+    rounds: 200
+    localEpochs: 10
+    batchSize: 64
+    learningRate: 0.0001
+    aggregationMethod: fedprox  # Better for heterogeneous data
+    minParticipants: 3
+    convergenceThreshold: 0.0001
+
+  privacy:
+    differentialPrivacy: true
+    epsilon: 0.5  # Stricter privacy for financial data
+    delta: 1e-7
+    budget:
+      total: 5.0
+      perQuery: 0.05
+    secureAggregation: true
+    aggregationThreshold: 3
+
+  participants:
+    - id: bank-usa
+      endpoint: https://bank-usa.example.com:8443
+      weight: 2.0
+
+    - id: bank-eu
+      endpoint: https://bank-eu.example.com:8443
+      weight: 1.8
+
+    - id: bank-asia
+      endpoint: https://bank-asia.example.com:8443
+      weight: 1.5
+
+---
+
+# Participant Configuration Example
+
+federatedLearning:
+  enabled: true
+
+  coordinator:
+    # Connect to coordinator
+    endpoint: https://fl-coordinator.example.com
+    role: participant
+
+  training:
+    # Local training settings only
+    localEpochs: 5
+    batchSize: 32
+    learningRate: 0.001
+
+  privacy:
+    # Privacy settings for local training
+    differentialPrivacy: true
+    epsilon: 1.0
+    delta: 1e-5
+    budget:
+      total: 10.0
+      perQuery: 0.1
