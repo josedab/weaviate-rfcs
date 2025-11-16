@@ -1,0 +1,88 @@
+# Weaviate Development Configuration
+# This implements RFC 0015 for improved developer experience
+#
+# Copy this file to weaviate.dev.yaml and customize for your needs
+# Run: weaviate-cli dev start
+
+development:
+  enabled: true
+
+  # Storage Configuration
+  # Type: memory (no persistence), disk (persistent), or hybrid
+  storage:
+    type: memory
+    # path: ./data/dev  # Only needed for disk or hybrid
+    persist: false
+
+  # Schema Configuration
+  # Automatically reload schema when files change
+  schema:
+    autoReload: true
+    watchDirectory: ./schema
+    validateOnLoad: true
+
+  # Vectorizer Configuration
+  # Mock vectorizers for local development without API calls
+  vectorizers:
+    text2vec-openai:
+      mock: true
+      dimensions: 1536
+      mockLatency: 50  # Simulate API latency in ms
+
+    text2vec-cohere:
+      mock: true
+      dimensions: 768
+      mockLatency: 30
+
+    # You can configure real vectorizers too
+    # text2vec-huggingface:
+    #   mock: false
+
+  # Fixtures Configuration
+  # Automatically load test data on startup
+  fixtures:
+    enabled: true
+    directory: ./fixtures
+    autoLoad: true
+    clearBeforeLoad: true  # Clear existing data before loading
+
+  # Hot Reload Configuration
+  # Automatically restart when files change
+  hotReload:
+    enabled: true
+    watchPaths:
+      - ./schema
+      - ./fixtures
+    debounceMs: 1000  # Wait 1s after last change before reloading
+
+  # Debug Configuration
+  # Enhanced debugging and development tools
+  debug:
+    enableQueryExplain: true   # Enable /v1/graphql/explain endpoint
+    logAllQueries: false        # Log every query (can be verbose)
+    enableProfiling: true       # Enable pprof endpoints
+    enableMetrics: true         # Enable detailed metrics
+
+# Example usage:
+#
+# 1. Copy this file:
+#    cp weaviate.dev.yaml.example weaviate.dev.yaml
+#
+# 2. Create schema directory:
+#    mkdir -p schema fixtures
+#
+# 3. Add your schema files to ./schema/
+#    (YAML or JSON format)
+#
+# 4. Add fixture data to ./fixtures/
+#    (JSON format with objects array)
+#
+# 5. Start development server:
+#    weaviate-cli dev start
+#
+# 6. The server will:
+#    - Use in-memory storage (no persistence)
+#    - Auto-reload when schema changes
+#    - Use mock vectorizers (no API keys needed)
+#    - Load fixtures automatically
+#    - Enable query explain and profiling
