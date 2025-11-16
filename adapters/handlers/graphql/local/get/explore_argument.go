@@ -28,6 +28,10 @@ func nearObjectArgument(className string) *graphql.ArgumentConfig {
 	return common_filters.NearObjectArgument("GetObjects", className, true)
 }
 
+func timeDecayArgument(className string) *graphql.ArgumentConfig {
+	return common_filters.TimeDecayArgument("GetObjects", className)
+}
+
 func nearTextFields(prefix string) graphql.InputObjectConfigFieldMap {
 	nearTextFields := graphql.InputObjectConfigFieldMap{
 		"concepts": &graphql.InputObjectFieldConfig{

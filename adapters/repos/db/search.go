@@ -34,6 +34,7 @@ import (
 	"github.com/weaviate/weaviate/entities/search"
 	"github.com/weaviate/weaviate/entities/searchparams"
 	"github.com/weaviate/weaviate/entities/storobj"
+	"github.com/weaviate/weaviate/entities/timedecay"
 	"github.com/weaviate/weaviate/usecases/modules"
 	"github.com/weaviate/weaviate/usecases/objects"
 	"github.com/weaviate/weaviate/usecases/traverser"
@@ -161,6 +162,21 @@ func (db *DB) VectorSearch(ctx context.Context,
 		return nil, fmt.Errorf("invalid pagination params: %w", err)
 	}
 
+	// Convert time decay params to config
+	var timeDecayConfig *timedecay.Config
+	if params.TimeDecay != nil {
+		timeDecayConfig, err = params.TimeDecay.ToConfig()
+		if err != nil {
+			return nil, fmt.Errorf("invalid time decay configuration: %w", err)
+		}
+	}
+
+	// Apply over-fetch multiplier if time decay is enabled
+	originalLimit := totalLimit
+	if timeDecayConfig != nil {
+		totalLimit = calculateOverFetchLimit(totalLimit, timeDecayConfig)
+	}
+
 	idx := db.GetIndex(schema.ClassName(params.ClassName))
 	if idx == nil {
 		return nil, fmt.Errorf("tried to browse non-existing index for %s", params.ClassName)
@@ -174,7 +190,19 @@ func (db *DB) VectorSearch(ctx context.Context,
 		return nil, errors.Wrapf(err, "object vector search at index %s", idx.ID())
 	}
 
-	if totalLimit < 0 {
+	// Apply time decay scoring if configured
+	if timeDecayConfig != nil {
+		res, dists, err = applyTimeDecay(res, dists, timeDecayConfig, originalLimit)
+		if err != nil {
+			return nil, fmt.Errorf("apply time decay: %w", err)
+		}
+		// Update pagination limit to match the re-ranked results
+		if totalLimit < 0 {
+			params.Pagination.Limit = len(res)
+		} else {
+			params.Pagination.Limit = originalLimit
+		}
+	} else if totalLimit < 0 {
 		params.Pagination.Limit = len(res)
 	}
 

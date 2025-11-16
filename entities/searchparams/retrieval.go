@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	"github.com/weaviate/weaviate/entities/search"
+	"github.com/weaviate/weaviate/entities/timedecay"
 
 	"github.com/weaviate/weaviate/entities/models"
 	"github.com/weaviate/weaviate/entities/schema"
@@ -155,4 +156,75 @@ type GroupBy struct {
 	Groups          int
 	ObjectsPerGroup int
 	Properties      search.SelectProperties
+}
+
+// TimeDecay holds time decay scoring configuration for vector search
+type TimeDecay struct {
+	// Property is the name of the datetime property to use for decay
+	Property string
+	// HalfLife is the duration string (e.g., "7d") for exponential decay
+	HalfLife string
+	// MaxAge is the maximum age string (e.g., "30d") for linear decay
+	MaxAge string
+	// DecayFunction specifies the decay algorithm (EXPONENTIAL, LINEAR, STEP)
+	DecayFunction string
+	// StepThresholds for STEP decay function (optional)
+	StepThresholds []TimeDecayStepThreshold
+}
+
+// TimeDecayStepThreshold defines a threshold for step decay
+type TimeDecayStepThreshold struct {
+	MaxAge string
+	Weight float32
+}
+
+// ToConfig converts TimeDecay search params to timedecay.Config
+func (td *TimeDecay) ToConfig() (*timedecay.Config, error) {
+	if td == nil {
+		return nil, nil
+	}
+
+	config := &timedecay.Config{
+		Property:      td.Property,
+		DecayFunction: timedecay.DecayFunction(td.DecayFunction),
+	}
+
+	// Parse duration strings
+	if td.HalfLife != "" {
+		halfLife, err := timedecay.ParseDuration(td.HalfLife)
+		if err != nil {
+			return nil, fmt.Errorf("invalid halfLife: %w", err)
+		}
+		config.HalfLife = halfLife
+	}
+
+	if td.MaxAge != "" {
+		maxAge, err := timedecay.ParseDuration(td.MaxAge)
+		if err != nil {
+			return nil, fmt.Errorf("invalid maxAge: %w", err)
+		}
+		config.MaxAge = maxAge
+	}
+
+	// Convert step thresholds
+	if len(td.StepThresholds) > 0 {
+		config.StepThresholds = make([]timedecay.StepThreshold, len(td.StepThresholds))
+		for i, st := range td.StepThresholds {
+			maxAge, err := timedecay.ParseDuration(st.MaxAge)
+			if err != nil {
+				return nil, fmt.Errorf("invalid step threshold maxAge: %w", err)
+			}
+			config.StepThresholds[i] = timedecay.StepThreshold{
+				MaxAge: maxAge,
+				Weight: st.Weight,
+			}
+		}
+	}
+
+	// Validate the config
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
+
+	return config, nil
 }

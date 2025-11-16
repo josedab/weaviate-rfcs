@@ -235,6 +235,7 @@ func buildGetClassField(classObject *graphql.Object,
 			"where":      whereArgument(class.Class),
 			"group":      groupArgument(class.Class),
 			"groupBy":    groupByArgument(class.Class),
+			"timeDecay":  timeDecayArgument(class.Class),
 		},
 		Resolve: newResolver(authorizer, modulesProvider).makeResolveGetClass(class.Class),
 	}
@@ -472,6 +473,15 @@ func (r *resolver) resolveGet(p graphql.ResolveParams, className string) (interf
 		groupByParams = &p
 	}
 
+	var timeDecayParams *searchparams.TimeDecay
+	if timeDecay, ok := p.Args["timeDecay"]; ok {
+		p, err := common_filters.ExtractTimeDecay(timeDecay.(map[string]interface{}))
+		if err != nil {
+			return nil, fmt.Errorf("failed to extract timeDecay params: %w", err)
+		}
+		timeDecayParams = p
+	}
+
 	params := dto.GetParams{
 		Filters:                 filters,
 		ClassName:               className,
@@ -488,6 +498,7 @@ func (r *resolver) resolveGet(p graphql.ResolveParams, className string) (interf
 		HybridSearch:            hybridParams,
 		ReplicationProperties:   replProps,
 		GroupBy:                 groupByParams,
+		TimeDecay:               timeDecayParams,
 		Tenant:                  tenant,
 		TargetVectorCombination: targetVectorCombination,
 	}
