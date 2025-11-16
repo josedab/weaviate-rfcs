@@ -37,6 +37,12 @@ const (
 
 	DefaultFilterStrategy = FilterStrategyAcorn
 
+	// Learned filter optimization defaults
+	DefaultLearnedFilterEnabled    = false
+	DefaultLearnedFilterModelPath  = ""
+	DefaultLearnedFilterLogPath    = ""
+	DefaultLearnedFilterLogEnabled = false
+
 	// Fail validation if those criteria are not met
 	MinmumMaxConnections  = 4
 	MaximumMaxConnections = 2047
@@ -64,6 +70,12 @@ type UserConfig struct {
 	Multivector              MultivectorConfig `json:"multivector"`
 	SkipDefaultQuantization  bool              `json:"skipDefaultQuantization"`
 	TrackDefaultQuantization bool              `json:"trackDefaultQuantization"`
+
+	// Learned filter optimization
+	LearnedFilterEnabled    bool   `json:"learnedFilterEnabled"`
+	LearnedFilterModelPath  string `json:"learnedFilterModelPath"`
+	LearnedFilterLogPath    string `json:"learnedFilterLogPath"`
+	LearnedFilterLogEnabled bool   `json:"learnedFilterLogEnabled"`
 }
 
 // IndexType returns the type of the underlying vector index, thus making sure
@@ -132,6 +144,10 @@ func (u *UserConfig) SetDefaults() {
 			Repetitions:  DefaultMultivectorRepetitions,
 		},
 	}
+	u.LearnedFilterEnabled = DefaultLearnedFilterEnabled
+	u.LearnedFilterModelPath = DefaultLearnedFilterModelPath
+	u.LearnedFilterLogPath = DefaultLearnedFilterLogPath
+	u.LearnedFilterLogEnabled = DefaultLearnedFilterLogEnabled
 }
 
 // ParseAndValidateConfig from an unknown input value, as this is not further

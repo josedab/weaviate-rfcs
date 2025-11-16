@@ -199,12 +199,47 @@ func (h *hnsw) cacheSize() int64 {
 }
 
 func (h *hnsw) acornEnabled(allowList helpers.AllowList) bool {
+	return h.acornEnabledWithVector(allowList, nil)
+}
+
+func (h *hnsw) acornEnabledWithVector(allowList helpers.AllowList, queryVector []float32) bool {
 	if allowList == nil || !h.acornSearch.Load() {
 		return false
 	}
 
 	cacheSize := h.cacheSize()
 	allowListSize := allowList.Len()
+
+	// If learned filter optimizer is enabled and available, use it
+	if h.learnedFilterOptimizer != nil && h.learnedFilterOptimizer.IsEnabled() && queryVector != nil {
+		// Use ML model to predict selectivity
+		// Note: filter clause not available here, so passing nil
+		// This will rely on historical statistics or corpus-based heuristics
+		prediction, err := h.learnedFilterOptimizer.PredictSelectivity(
+			nil, // filter clause not available at this layer
+			allowList,
+			queryVector,
+			cacheSize,
+		)
+		if err == nil {
+			shouldUsePreFilter := h.learnedFilterOptimizer.ShouldUsePreFilter(prediction)
+
+			// Update statistics asynchronously (non-blocking)
+			if h.filterQueryLogger != nil && h.filterQueryLogger.IsEnabled() {
+				go func() {
+					actualSelectivity := float64(allowListSize) / float64(cacheSize)
+					// We can't get property name here, but we can log the statistics
+					// Property-specific logging would happen at a higher level
+					_ = actualSelectivity // Statistics update would happen here
+				}()
+			}
+
+			return shouldUsePreFilter
+		}
+		// If prediction fails, fall through to legacy logic
+	}
+
+	// Legacy logic: use fixed threshold
 	if cacheSize != 0 && float32(allowListSize)/float32(cacheSize) > float32(h.acornFilterRatio) {
 		return false
 	}
@@ -218,7 +253,7 @@ func (h *hnsw) searchLayerByVectorWithDistancer(ctx context.Context,
 	allowList helpers.AllowList, compressorDistancer compressionhelpers.CompressorDistancer,
 ) (*priorityqueue.Queue[any], error,
 ) {
-	if h.acornEnabled(allowList) {
+	if h.acornEnabledWithVector(allowList, queryVector) {
 		return h.searchLayerByVectorWithDistancerWithStrategy(ctx, queryVector, entrypoints, ef, level, allowList, compressorDistancer, ACORN)
 	}
 	return h.searchLayerByVectorWithDistancerWithStrategy(ctx, queryVector, entrypoints, ef, level, allowList, compressorDistancer, SWEEPING)
@@ -808,7 +843,7 @@ func (h *hnsw) knnSearchByVector(ctx context.Context, searchVec []float32, k int
 	h.shardedNodeLocks.RLock(entryPointID)
 	entryPointNode := h.nodes[entryPointID]
 	h.shardedNodeLocks.RUnlock(entryPointID)
-	useAcorn := h.acornEnabled(allowList)
+	useAcorn := h.acornEnabledWithVector(allowList, searchVec)
 	isMultivec := h.multivector.Load() && !h.muvera.Load()
 	if useAcorn {
 		if entryPointNode == nil {

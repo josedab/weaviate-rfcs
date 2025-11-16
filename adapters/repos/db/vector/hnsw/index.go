@@ -168,6 +168,10 @@ type hnsw struct {
 	acornSearch      atomic.Bool
 	acornFilterRatio float64
 
+	// Learned filter optimization
+	learnedFilterOptimizer *LearnedFilterOptimizer
+	filterQueryLogger      *FilterQueryLogger
+
 	disableSnapshots  bool
 	snapshotOnStartup bool
 
@@ -368,6 +372,30 @@ func New(cfg Config, uc ent.UserConfig,
 		fs:              common.NewOSFS(),
 	}
 	index.acornSearch.Store(uc.FilterStrategy == ent.FilterStrategyAcorn)
+
+	// Initialize learned filter optimizer if enabled
+	if uc.LearnedFilterEnabled {
+		optimizer, err := NewLearnedFilterOptimizer(
+			true,
+			uc.LearnedFilterModelPath,
+			index.acornFilterRatio, // fallback threshold
+		)
+		if err != nil {
+			cfg.Logger.WithError(err).Warn("Failed to initialize learned filter optimizer, disabling")
+		} else {
+			index.learnedFilterOptimizer = optimizer
+		}
+	}
+
+	// Initialize filter query logger if enabled
+	if uc.LearnedFilterLogEnabled && uc.LearnedFilterLogPath != "" {
+		logger, err := NewFilterQueryLogger(uc.LearnedFilterLogPath, true)
+		if err != nil {
+			cfg.Logger.WithError(err).Warn("Failed to initialize filter query logger, disabling")
+		} else {
+			index.filterQueryLogger = logger
+		}
+	}
 
 	index.multivector.Store(uc.Multivector.Enabled)
 	index.muvera.Store(uc.Multivector.MuveraConfig.Enabled)
@@ -747,6 +775,13 @@ func (h *hnsw) Shutdown(ctx context.Context) error {
 		}
 	} else {
 		h.cache.Drop()
+	}
+
+	// Close filter query logger if enabled
+	if h.filterQueryLogger != nil {
+		if err := h.filterQueryLogger.Close(); err != nil {
+			h.logger.WithError(err).Warn("Failed to close filter query logger during shutdown")
+		}
 	}
 
 	return nil
