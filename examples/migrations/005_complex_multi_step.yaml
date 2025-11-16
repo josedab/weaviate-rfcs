@@ -1,0 +1,64 @@
+version: 5
+from_version: 4
+description: "Multi-step: Add sentiment, update index, enable compression"
+author: "jose@josedavidbaena.com"
+estimated_duration: "2 hours"
+
+validation:
+  - type: class_exists
+    class: Article
+  - type: min_weaviate_version
+    version: "1.26.0"
+
+operations:
+  # Operation 1: Add property
+  - type: add_property
+    class: Article
+    property:
+      name: sentiment_score
+      dataType: ["number"]
+      description: "Sentiment from -1 to 1"
+      indexFilterable: true
+      indexRangeFilters: true
+    default_value: 0.0
+    backfill: true
+
+  # Operation 2: Add category property
+  - type: add_property
+    class: Article
+    property:
+      name: category
+      dataType: ["text"]
+      description: "Article category"
+      indexFilterable: true
+    default_value: "uncategorized"
+    backfill: true
+
+  # Operation 3: Update vector index (increase recall)
+  - type: update_vector_index_config
+    class: Article
+    config:
+      ef: 128
+      dynamicEFMin: 100
+      dynamicEFMax: 500
+
+rollback:
+  - type: delete_property
+    class: Article
+    property_name: sentiment_score
+  - type: delete_property
+    class: Article
+    property_name: category
+  - type: restore_vector_index_config
+    class: Article
+    from_backup: true
+
+validation_after:
+  - type: property_exists
+    class: Article
+    property: sentiment_score
+  - type: property_exists
+    class: Article
+    property: category
+  - type: index_healthy
+    class: Article

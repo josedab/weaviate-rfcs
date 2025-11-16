@@ -1,0 +1,34 @@
+version: 1
+description: "Initial schema with Article class"
+author: "jose@josedavidbaena.com"
+
+validation:
+  - type: min_weaviate_version
+    version: "1.26.0"
+
+operations:
+  - type: add_class
+    class: Article
+    config:
+      vectorizer: text2vec-openai
+      vectorIndexType: hnsw
+      properties:
+        - name: title
+          dataType: ["text"]
+          indexFilterable: true
+          indexSearchable: true
+        - name: content
+          dataType: ["text"]
+          indexSearchable: true
+        - name: publishedAt
+          dataType: ["date"]
+          indexFilterable: true
+
+rollback:
+  # Note: Class deletion may not be supported in all Weaviate versions
+  - type: delete_class
+    class: Article
+
+validation_after:
+  - type: class_exists
+    class: Article

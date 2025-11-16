@@ -1,0 +1,31 @@
+version: 3
+from_version: 2
+description: "Optimize vector index for better recall"
+author: "jose@josedavidbaena.com"
+estimated_duration: "2 minutes"
+
+validation:
+  - type: class_exists
+    class: Article
+  - type: index_healthy
+    class: Article
+
+operations:
+  - type: update_vector_index_config
+    class: Article
+    config:
+      ef: 128
+      efConstruction: 256
+      dynamicEFMin: 100
+      dynamicEFMax: 500
+      dynamicEFFactor: 8
+      maxConnections: 64
+
+rollback:
+  - type: restore_vector_index_config
+    class: Article
+    from_backup: true
+
+validation_after:
+  - type: index_healthy
+    class: Article

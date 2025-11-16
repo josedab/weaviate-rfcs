@@ -1,0 +1,15 @@
+weaviate:
+  host: localhost:8080
+  scheme: http
+  # api_key: your-api-key-here  # Optional, for authentication
+
+migrations_dir: ./migrations
+
+# Safety settings
+dry_run_by_default: true  # Require --force to apply
+auto_backup: true          # Backup before destructive changes
+max_concurrent_operations: 1
+
+# Timeouts
+operation_timeout: 30m
+migration_timeout: 2h

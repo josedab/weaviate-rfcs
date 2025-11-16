@@ -1,0 +1,31 @@
+version: 2
+from_version: 1
+description: "Add sentiment analysis field"
+author: "jose@josedavidbaena.com"
+estimated_duration: "30 seconds"
+
+validation:
+  - type: class_exists
+    class: Article
+
+operations:
+  - type: add_property
+    class: Article
+    property:
+      name: sentiment
+      dataType: ["number"]
+      description: "Sentiment score from -1 (negative) to 1 (positive)"
+      indexFilterable: true
+      indexRangeFilters: true
+    default_value: 0.0
+    backfill: true
+
+rollback:
+  - type: delete_property
+    class: Article
+    property_name: sentiment
+
+validation_after:
+  - type: property_exists
+    class: Article
+    property: sentiment

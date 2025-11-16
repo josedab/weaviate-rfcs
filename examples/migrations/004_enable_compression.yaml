@@ -1,0 +1,33 @@
+version: 4
+from_version: 3
+description: "Enable PQ compression for memory optimization"
+author: "jose@josedavidbaena.com"
+estimated_duration: "90 minutes"
+
+validation:
+  - type: class_exists
+    class: Article
+  - type: min_weaviate_version
+    version: "1.26.0"
+
+operations:
+  - type: enable_compression
+    class: Article
+    target_vector: ""
+    compression:
+      type: PQ
+      segments: 8
+      centroids: 256
+      trainingLimit: 100000
+    background: true
+    estimated_duration: "90 minutes"
+
+rollback:
+  - type: disable_compression
+    class: Article
+
+validation_after:
+  - type: index_healthy
+    class: Article
+  - type: data_integrity
+    class: Article
