@@ -1,0 +1,339 @@
+# GraphQL Subscription Examples for Real-Time Streaming
+
+# Example 1: Subscribe to all product changes
+subscription ProductChanges {
+  productChanges {
+    type  # INSERT, UPDATE, DELETE
+
+    product {
+      id
+      name
+      description
+      price
+      category
+      inStock
+    }
+
+    _metadata {
+      timestamp
+      user
+      transactionId
+      sequenceNum
+    }
+  }
+}
+
+# Example 2: Subscribe to specific category
+subscription ElectronicsChanges {
+  productChanges(
+    where: {
+      category: { equals: "Electronics" }
+    }
+  ) {
+    type
+
+    product {
+      id
+      name
+      price
+      category
+    }
+  }
+}
+
+# Example 3: Subscribe to price changes only
+subscription PriceChanges {
+  productChanges(
+    operations: [UPDATE]
+    where: {
+      price: { greaterThan: 100 }
+    }
+  ) {
+    type
+
+    before {
+      price
+    }
+
+    after {
+      price
+    }
+
+    product {
+      id
+      name
+      price
+    }
+  }
+}
+
+# Example 4: Subscribe to new articles
+subscription NewArticles {
+  articleChanges(
+    operations: [INSERT]
+  ) {
+    type
+
+    article {
+      id
+      title
+      content
+      author
+      publishedAt
+      category
+      tags
+    }
+
+    _metadata {
+      timestamp
+    }
+  }
+}
+
+# Example 5: Subscribe to AI category articles
+subscription AIArticles {
+  articleChanges(
+    where: {
+      category: { equals: "AI" }
+    }
+  ) {
+    type
+
+    article {
+      id
+      title
+      content
+      publishedAt
+
+      _additional {
+        vector
+        certainty
+      }
+    }
+  }
+}
+
+# Example 6: Subscribe to user changes with filters
+subscription ActiveUserChanges {
+  userChanges(
+    where: {
+      and: [
+        { status: { equals: "active" } }
+        { lastLoginAt: { greaterThan: "2025-01-01T00:00:00Z" } }
+      ]
+    }
+  ) {
+    type
+
+    user {
+      id
+      email
+      name
+      status
+      lastLoginAt
+    }
+  }
+}
+
+# Example 7: Subscribe to inventory updates
+subscription InventoryUpdates {
+  productChanges(
+    operations: [UPDATE]
+    where: {
+      inStock: { lessThan: 10 }
+    }
+  ) {
+    type
+
+    before {
+      inStock
+    }
+
+    after {
+      inStock
+    }
+
+    product {
+      id
+      name
+      inStock
+      price
+    }
+
+    _metadata {
+      timestamp
+    }
+  }
+}
+
+# Example 8: Subscribe to multiple classes
+subscription AllChanges {
+  productChanges {
+    type
+    product { id name }
+  }
+
+  articleChanges {
+    type
+    article { id title }
+  }
+
+  userChanges {
+    type
+    user { id email }
+  }
+}
+
+# Example 9: Subscribe with vector similarity
+subscription SimilarArticles {
+  articleChanges(
+    nearVector: {
+      vector: [0.1, 0.2, 0.3, ...]
+      certainty: 0.8
+    }
+  ) {
+    type
+
+    article {
+      id
+      title
+      content
+
+      _additional {
+        certainty
+        distance
+      }
+    }
+  }
+}
+
+# Example 10: Subscribe to deletions only
+subscription DeletedProducts {
+  productChanges(
+    operations: [DELETE]
+  ) {
+    type
+
+    before {
+      id
+      name
+      price
+    }
+
+    _metadata {
+      timestamp
+      user
+    }
+  }
+}
+
+# Schema Type Definitions
+
+type Subscription {
+  productChanges(
+    where: ProductWhereInput
+    operations: [ChangeType!]
+  ): ProductChangeEvent!
+
+  articleChanges(
+    where: ArticleWhereInput
+    operations: [ChangeType!]
+    nearVector: NearVectorInput
+  ): ArticleChangeEvent!
+
+  userChanges(
+    where: UserWhereInput
+    operations: [ChangeType!]
+  ): UserChangeEvent!
+}
+
+enum ChangeType {
+  INSERT
+  UPDATE
+  DELETE
+}
+
+type ProductChangeEvent {
+  type: ChangeType!
+  before: Product
+  after: Product
+  product: Product!
+  _metadata: ChangeMetadata!
+}
+
+type ArticleChangeEvent {
+  type: ChangeType!
+  before: Article
+  after: Article
+  article: Article!
+  _metadata: ChangeMetadata!
+}
+
+type UserChangeEvent {
+  type: ChangeType!
+  before: User
+  after: User
+  user: User!
+  _metadata: ChangeMetadata!
+}
+
+type ChangeMetadata {
+  timestamp: DateTime!
+  user: String
+  transactionId: String
+  sequenceNum: Int!
+}
+
+input ProductWhereInput {
+  name: StringFilter
+  category: StringFilter
+  price: NumberFilter
+  inStock: NumberFilter
+  and: [ProductWhereInput!]
+  or: [ProductWhereInput!]
+}
+
+input ArticleWhereInput {
+  title: StringFilter
+  category: StringFilter
+  publishedAt: DateFilter
+  and: [ArticleWhereInput!]
+  or: [ArticleWhereInput!]
+}
+
+input UserWhereInput {
+  email: StringFilter
+  status: StringFilter
+  lastLoginAt: DateFilter
+  and: [UserWhereInput!]
+  or: [UserWhereInput!]
+}
+
+input StringFilter {
+  equals: String
+  contains: String
+  startsWith: String
+  endsWith: String
+  in: [String!]
+  notIn: [String!]
+}
+
+input NumberFilter {
+  equals: Float
+  greaterThan: Float
+  lessThan: Float
+  greaterThanOrEqual: Float
+  lessThanOrEqual: Float
+}
+
+input DateFilter {
+  equals: DateTime
+  greaterThan: DateTime
+  lessThan: DateTime
+}
+
+input NearVectorInput {
+  vector: [Float!]!
+  certainty: Float
+  distance: Float
+}
