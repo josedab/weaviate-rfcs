@@ -1,0 +1,158 @@
+# Example Weaviate Security Configuration
+# This file demonstrates the complete security configuration
+# as described in RFC 0017
+
+# Authentication configuration
+authentication:
+  # API Key authentication
+  apikey:
+    enabled: true
+    users:
+      - admin-user
+      - app-service
+    # API keys are managed via the API key manager
+    # and stored securely with hashing
+
+  # Anonymous access (disable for production)
+  anonymous:
+    enabled: false
+
+  # OIDC authentication
+  oidc:
+    enabled: true
+    issuer: https://accounts.google.com
+    client_id: your-client-id
+    client_secret: ${OIDC_CLIENT_SECRET}
+    redirect_url: http://localhost:8080/v1/auth/callback
+    scopes:
+      - openid
+      - email
+      - profile
+      - groups
+
+    # Role mapping from OIDC groups to Weaviate roles
+    role_mappings:
+      - oidc_group: "engineering"
+        weaviate_role: "data-engineer"
+
+      - oidc_group: "data-science"
+        weaviate_role: "data-scientist"
+
+      - oidc_group: "admins"
+        weaviate_role: "admin"
+
+# Authorization configuration (RBAC)
+authorization:
+  enabled: true
+
+  # Admin users (have root access)
+  admin_users:
+    - admin@company.com
+
+  # Roles configuration path
+  roles_path: /etc/weaviate/roles.yaml
+
+  # Users configuration path
+  users_path: /etc/weaviate/users.yaml
+
+# Audit logging configuration
+audit:
+  enabled: true
+
+  # Audit log destination
+  output:
+    type: file  # Options: file, syslog, elasticsearch
+    path: /var/log/weaviate/audit.log
+
+  # Log retention period
+  retention: 2190h  # 6 years for HIPAA compliance
+
+  # What to audit
+  events:
+    - authentication_success
+    - authentication_failure
+    - authorization_success
+    - authorization_failure
+    - data_access
+    - schema_changes
+    - user_management
+    - role_changes
+
+  # Exclude IP addresses from audit logs
+  ip_audit_disabled: false
+
+  # Compliance report generation
+  compliance_reports:
+    enabled: true
+    schedule: "0 0 * * 0"  # Weekly on Sunday
+    output_path: /var/log/weaviate/compliance/
+
+# Encryption configuration
+encryption:
+  # Field-level encryption
+  field_level:
+    enabled: true
+
+    # Key management
+    key_manager:
+      type: vault  # Options: local, vault, kms
+
+      # Vault configuration
+      vault:
+        address: https://vault.company.com:8200
+        token: ${VAULT_TOKEN}
+        namespace: weaviate
+        key_path: secret/data/weaviate/encryption-keys
+
+      # Local key manager (for development only)
+      local:
+        key_path: /etc/weaviate/encryption-keys/
+
+    # Automatic key rotation
+    key_rotation:
+      enabled: true
+      interval: 2160h  # 90 days
+
+# Performance tuning
+performance:
+  # Authorization cache settings
+  authorization_cache:
+    enabled: true
+    ttl: 300  # 5 minutes
+    max_size: 10000
+
+  # Encryption performance
+  encryption:
+    # Number of encryption workers
+    workers: 4
+    # Batch size for encrypted operations
+    batch_size: 100
+
+# Security headers
+security:
+  # CORS settings
+  cors:
+    allowed_origins:
+      - https://app.company.com
+    allowed_methods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+    allowed_headers:
+      - Authorization
+      - Content-Type
+    expose_headers:
+      - X-Request-ID
+
+  # Rate limiting
+  rate_limit:
+    enabled: true
+    requests_per_minute: 1000
+    burst: 100
+
+  # Security headers
+  headers:
+    x_frame_options: DENY
+    x_content_type_options: nosniff
+    strict_transport_security: max-age=31536000; includeSubDomains

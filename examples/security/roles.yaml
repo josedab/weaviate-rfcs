@@ -1,0 +1,102 @@
+# Example RBAC Roles Configuration
+# This file demonstrates how to configure roles and permissions
+# as described in RFC 0017
+
+roles:
+  # Data Scientist role - Read-only access to datasets
+  - name: data-scientist
+    description: Read-only access to datasets for analysis
+    permissions:
+      - resource:
+          type: class
+          identifier: "Article"
+        actions: [read, search]
+
+      - resource:
+          type: class
+          identifier: "Dataset"
+        actions: [read, search]
+
+      - resource:
+          type: class
+          identifier: "Publication"
+        actions: [read]
+
+  # Data Engineer role - Full data management with tenant isolation
+  - name: data-engineer
+    description: Full data management within assigned tenant
+    permissions:
+      - resource:
+          type: class
+          identifier: "*"
+        actions: [read, write, delete]
+        conditions:
+          - field: tenant
+            operator: equals
+            value: "${user.tenant}"
+
+      - resource:
+          type: schema
+          identifier: "*"
+        actions: [read]
+
+  # Application role - Limited write access for applications
+  - name: application
+    description: Application-specific access for services
+    permissions:
+      - resource:
+          type: class
+          identifier: "Events"
+        actions: [read, write]
+
+      - resource:
+          type: class
+          identifier: "Logs"
+        actions: [write]
+
+  # Viewer role - Read-only access to all data
+  - name: viewer
+    description: Read-only access to all collections
+    permissions:
+      - resource:
+          type: class
+          identifier: "*"
+        actions: [read]
+
+      - resource:
+          type: schema
+          identifier: "*"
+        actions: [read]
+
+  # Admin role - Full system access
+  - name: admin
+    description: Full system administration access
+    permissions:
+      - resource:
+          type: system
+          identifier: "*"
+        actions: [admin, read, write, delete]
+
+      - resource:
+          type: schema
+          identifier: "*"
+        actions: [admin, read, write, delete]
+
+      - resource:
+          type: class
+          identifier: "*"
+        actions: [admin, read, write, delete]
+
+  # Security Auditor role - Access to audit logs
+  - name: security-auditor
+    description: Access to security and audit logs
+    permissions:
+      - resource:
+          type: system
+          identifier: "audit-logs"
+        actions: [read]
+
+      - resource:
+          type: system
+          identifier: "security-events"
+        actions: [read]

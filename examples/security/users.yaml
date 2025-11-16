@@ -1,0 +1,54 @@
+# Example User Configuration
+# This file demonstrates how to assign roles to users
+# as described in RFC 0017
+
+users:
+  # Data scientist with read-only access
+  - email: alice@company.com
+    roles:
+      - data-scientist
+    tenant: research-team
+
+  # Data engineer with full data management in specific tenant
+  - email: bob@company.com
+    roles:
+      - data-engineer
+    tenant: engineering-team
+
+  # Administrator with full access
+  - email: admin@company.com
+    roles:
+      - admin
+
+  # Application service account
+  - email: app-service@company.com
+    roles:
+      - application
+
+  # Security auditor
+  - email: security@company.com
+    roles:
+      - security-auditor
+
+  # Multi-role user (viewer + security auditor)
+  - email: compliance@company.com
+    roles:
+      - viewer
+      - security-auditor
+
+# Group-based role assignments
+groups:
+  # Engineering group gets data-engineer role
+  - name: engineering
+    roles:
+      - data-engineer
+
+  # Data science group gets data-scientist role
+  - name: data-science
+    roles:
+      - data-scientist
+
+  # Admins group gets admin role
+  - name: admins
+    roles:
+      - admin

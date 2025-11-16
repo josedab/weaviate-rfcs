@@ -1,0 +1,78 @@
+{
+  "class": "Patient",
+  "description": "Medical patient records with field-level encryption",
+  "properties": [
+    {
+      "name": "name",
+      "dataType": ["string"],
+      "description": "Patient name (not encrypted)"
+    },
+    {
+      "name": "dateOfBirth",
+      "dataType": ["date"],
+      "description": "Date of birth (not encrypted)"
+    },
+    {
+      "name": "ssn",
+      "dataType": ["string"],
+      "description": "Social Security Number (encrypted)",
+      "encryption": {
+        "enabled": true,
+        "algorithm": "AES-256-GCM",
+        "keySource": "vault"
+      }
+    },
+    {
+      "name": "medicalHistory",
+      "dataType": ["text"],
+      "description": "Medical history (encrypted)",
+      "encryption": {
+        "enabled": true,
+        "algorithm": "AES-256-GCM",
+        "keySource": "vault"
+      }
+    },
+    {
+      "name": "medications",
+      "dataType": ["text[]"],
+      "description": "Current medications (encrypted)",
+      "encryption": {
+        "enabled": true,
+        "algorithm": "AES-256-GCM",
+        "keySource": "vault"
+      }
+    },
+    {
+      "name": "diagnosisCode",
+      "dataType": ["string"],
+      "description": "ICD-10 diagnosis code (not encrypted)"
+    },
+    {
+      "name": "labResults",
+      "dataType": ["text"],
+      "description": "Laboratory results (encrypted)",
+      "encryption": {
+        "enabled": true,
+        "algorithm": "AES-256-GCM",
+        "keySource": "vault"
+      }
+    },
+    {
+      "name": "insuranceInfo",
+      "dataType": ["text"],
+      "description": "Insurance information (encrypted)",
+      "encryption": {
+        "enabled": true,
+        "algorithm": "AES-256-GCM",
+        "keySource": "vault"
+      }
+    }
+  ],
+  "vectorizer": "text2vec-transformers",
+  "moduleConfig": {
+    "text2vec-transformers": {
+      "vectorizeClassName": false,
+      "poolingStrategy": "masked_mean"
+    }
+  }
+}
